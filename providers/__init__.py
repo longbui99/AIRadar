@@ -18,6 +18,7 @@ class MetricData:
     reset_label: str    # e.g. "2h 14m"
     extra: str = ""     # optional (e.g. "$2.1k / $5k")
     detail_only: bool = False  # if True, show in dropdown only, not menu bar
+    status_only: bool = False  # if True, render header + extra text only (no bar/forecast)
 
 
 @dataclass
@@ -45,6 +46,8 @@ class ProviderStatus:
     spend_forecast: str = ""
     plan_label: str = ""
     rate_limits: list[tuple[str, float, str]] = field(default_factory=list)
+    # Local usage breakdown: {"day": [(label, desc), ...], "week": [...]}
+    breakdown: dict[str, list[tuple[str, str]]] = field(default_factory=dict)
 
 
 def load_providers() -> dict[str, object]:

@@ -15,6 +15,7 @@ from providers.rendering import (
     _provider_color,
     _sfconfig,
     configure_bar,
+    render_breakdown_section,
     render_footer,
     render_metric_section,
     render_plan_badge,
@@ -77,6 +78,7 @@ def render_single(status: ProviderStatus) -> None:
             color=md.color,
             reset_label=md.reset_label,
             extra=md.extra,
+            status_only=getattr(md, "status_only", False),
         )
         for line in render_metric_section(m):
             print(line)
@@ -97,6 +99,13 @@ def render_single(status: ProviderStatus) -> None:
     if status.rate_limits:
         print(light_sep)
         for line in render_rate_limit_section(status.rate_limits):
+            print(line)
+
+    # Local usage breakdown (what's driving usage — Day/Week)
+    breakdown_lines = render_breakdown_section(getattr(status, "breakdown", {}))
+    if breakdown_lines:
+        print(light_sep)
+        for line in breakdown_lines:
             print(line)
 
     # Error

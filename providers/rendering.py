@@ -185,6 +185,7 @@ class Metric:
     color: str
     reset_label: str
     extra: str = ""
+    status_only: bool = False
 
 
 @dataclass
@@ -237,11 +238,21 @@ def render_metric_section(m: Metric) -> list[str]:
     else:
         header_icon = "checkmark.circle.fill"
 
+    if getattr(m, "status_only", False):
+        header_icon = "creditcard.fill"
+
     header_cfg = _sfconfig([hex_c], weight="semibold")
     lines.append(
         f"  {m.label} | sfimage={header_icon} "
         f"sfconfig={header_cfg} sfsize=14 size=13 font=SF-Pro-Text-Semibold"
     )
+
+    # Status-only metrics (e.g. disabled credits) show just a text line — no
+    # progress bar or forecast, which would be meaningless without a value.
+    if getattr(m, "status_only", False):
+        if m.extra:
+            lines.append(f"  {m.extra} | size=12 color={hex_c}")
+        return lines
 
     if m.pct < 0:
         # Unlimited — full light gray bar
@@ -321,6 +332,37 @@ def render_rate_limit_section(limits_details: list[tuple[str, float, str]]) -> l
         lines.append(
             f"  {bar} {text} | font=SF-Mono-Regular size=11 color={hex_c} trim=false"
         )
+    return lines
+
+
+def render_breakdown_section(breakdown: dict) -> list[str]:
+    """Render the local "what's driving usage" breakdown (Day + Week groups)."""
+    if not breakdown or not (breakdown.get("day") or breakdown.get("week")):
+        return []
+    lines = []
+    cfg = _sfconfig([COLORS["blue"]], weight="semibold")
+    lines.append(
+        f"  What's Driving Usage | sfimage=chart.pie.fill "
+        f"sfconfig={cfg} sfsize=14 size=13 font=SF-Pro-Text-Semibold"
+    )
+    for key, title in (("day", "Last 24h"), ("week", "Last 7 days")):
+        insights = breakdown.get(key) or []
+        if not insights:
+            continue
+        lines.append(
+            f"  {title} | size=11 font=SF-Pro-Text-Semibold color={COLORS['label']}"
+        )
+        for label, desc in insights:
+            lines.append(
+                f"  • {label} | size=12 color={COLORS['white']}"
+            )
+            if desc:
+                lines.append(
+                    f"    {desc} | size=10 color={COLORS['dim']}"
+                )
+    lines.append(
+        f"  Approximate · local sessions only | size=10 color={COLORS['dim']}"
+    )
     return lines
 
 

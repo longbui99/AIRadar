@@ -197,8 +197,13 @@ cmd_install() {
     check_prereqs
 
     if [ ! -f "$CONFIG" ]; then
-        err "config.json not found. Run: ai-radar setup"
-        exit 1
+        if [ -f "$SCRIPT_DIR/config.example.json" ]; then
+            cp "$SCRIPT_DIR/config.example.json" "$CONFIG"
+            info "Created config.json from config.example.json"
+        else
+            err "config.json not found. Run: ai-radar setup"
+            exit 1
+        fi
     fi
 
     if [ ! -f "$TEMPLATE" ]; then

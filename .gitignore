@@ -310,3 +310,5 @@ storage/
 .usage_cache.json__pycache__/
 .usage_cache.json
 homebrew-*/
+# User state — not tracked (see config.example.json)
+config.json

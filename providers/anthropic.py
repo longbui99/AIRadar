@@ -334,6 +334,10 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
     api_key = config.get("api_key", "")
     admin_key = config.get("admin_key", "")
     budget = config.get("monthly_budget", 0)
+    # Personal credit cap. The API's extra_usage.monthly_limit is the org-wide
+    # credit pool (e.g. $5000); set credit_limit to your per-member allowance
+    # (e.g. $50) to display that instead.
+    credit_limit = config.get("credit_limit", 0)
 
     # Auto-discover from Claude Code keychain
     keychain_creds = _read_keychain_creds() if not api_key else {}
@@ -357,6 +361,7 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
     summary = ""
     error = None
     worst_color = "green"
+    breakdown: dict[str, list[tuple[str, str]]] = {}
 
     # Admin key: fetch spend
     if admin_key:
@@ -432,8 +437,39 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
                     )
                 )
 
+            # Per-model weekly limits (e.g. Fable, Sonnet, Opus) are now delivered
+            # in the `limits` array as kind="weekly_scoped" entries, each carrying a
+            # scope.model.display_name. The legacy seven_day_sonnet/opus fields are
+            # kept as a fallback for older API responses.
+            seen_scoped: set[str] = set()
+            for lim in usage.get("limits") or []:
+                if lim.get("kind") != "weekly_scoped":
+                    continue
+                scope = lim.get("scope") or {}
+                model_name = ((scope.get("model") or {}).get("display_name") or "").strip()
+                if not model_name:
+                    continue
+                seen_scoped.add(model_name.lower())
+                pct_m = lim.get("percent") or 0
+                reset_m_raw = lim.get("resets_at", "")
+                fc_m = _forecast_color(pct_m, reset_m_raw, 168)
+                fp_m = _forecast_pct(pct_m, reset_m_raw, 168)
+                worst_color = _worst(worst_color, fc_m)
+                metrics.append(
+                    MetricData(
+                        label=f"{model_name} (7d)",
+                        short_label=model_name[:3],
+                        pct=pct_m,
+                        forecast_pct=fp_m,
+                        color=fc_m,
+                        reset_label=_parse_reset(reset_m_raw),
+                        detail_only=True,
+                    )
+                )
+
+            # Legacy fallback: only if the limits array didn't already report Sonnet.
             sonnet = usage.get("seven_day_sonnet")
-            if sonnet:
+            if sonnet and "sonnet" not in seen_scoped:
                 pct_s = sonnet.get("utilization") or 0
                 reset_s_raw = sonnet.get("resets_at", "")
                 fc_s = _forecast_color(pct_s, reset_s_raw, 168)
@@ -455,6 +491,12 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
                 used = extra.get("used_credits", 0) or 0
                 limit_val = extra.get("monthly_limit") or 0
                 epct = extra.get("utilization") or 0
+                # Override the org-wide pool limit with the configured personal cap.
+                # Note: `used` is what the API reports for the pool, so utilization
+                # is only meaningful when your usage maps to your own credit balance.
+                if credit_limit > 0:
+                    limit_val = credit_limit
+                    epct = min((used / credit_limit * 100) if credit_limit else 0, 100)
                 now = datetime.utcnow()
                 day_of_month = now.day
                 days_in_month = 30
@@ -466,9 +508,10 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
                 else:
                     projected_pct = epct
                 fc_e = _pct_color(projected_pct)
-                worst_color = _worst(worst_color, fc_e)
+                # Credit/spend status is informational — dropdown-only, and it
+                # must NOT drive the menu-bar (main) color or title, which reflect
+                # plan usage windows only.
                 limit_display = _fmt_money(limit_val) if limit_val else "unlimited"
-                bar_parts.append(f"{_fmt_money(used)}/{limit_display}")
                 metrics.append(
                     MetricData(
                         label="Extra Credits",
@@ -478,10 +521,53 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
                         color=fc_e,
                         reset_label="month end",
                         extra=f"{_fmt_money(used)} / {limit_display}",
+                        detail_only=True,
+                    )
+                )
+            else:
+                # Credits disabled (e.g. org out of credits) — surface a status
+                # row so it's visible instead of silently omitted.
+                reason_raw = (extra or {}).get("disabled_reason") or ""
+                reason = {
+                    "out_of_credits": "Out of credits",
+                    "not_eligible": "Not eligible",
+                }.get(reason_raw, reason_raw.replace("_", " ").capitalize() or "Off")
+                # Show used/limit if the API still reports a spent amount, otherwise
+                # the reason. When out of credits the API zeroes these out.
+                used_c = (extra or {}).get("used_credits")
+                if used_c is None:
+                    minor = ((usage.get("spend") or {}).get("used") or {}).get("amount_minor")
+                    used_c = (minor / 100.0) if minor else 0
+                disp_limit = credit_limit or (extra or {}).get("monthly_limit") or 0
+                if used_c:
+                    lim_disp = _fmt_money(disp_limit) if disp_limit else "unlimited"
+                    status_text = f"{_fmt_money(used_c)} / {lim_disp} · {reason}"
+                else:
+                    cap = f" · cap {_fmt_money(disp_limit)}" if disp_limit else ""
+                    status_text = f"{reason}{cap}"
+                metrics.append(
+                    MetricData(
+                        label="Extra Credits",
+                        short_label="$",
+                        pct=0,
+                        forecast_pct=0,
+                        color="gray",
+                        reset_label="",
+                        extra=status_text,
+                        detail_only=True,
+                        status_only=True,
                     )
                 )
 
             summary = " ".join(bar_parts) if bar_parts else "OK"
+
+            # Local "what's driving usage" breakdown (Day/Week), approximate.
+            if config.get("usage_breakdown", True):
+                try:
+                    from providers.usage_breakdown import compute_breakdown
+                    breakdown = compute_breakdown()
+                except Exception as be:
+                    logger.warning("usage breakdown failed: %s", be)
 
         except Exception as e:
             if sub_price > 0:
@@ -536,6 +622,7 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
         spend_forecast=spend_forecast,
         plan_label=plan_label,
         rate_limits=rate_limits,
+        breakdown=breakdown,
     )
 
 

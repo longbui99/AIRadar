@@ -1,0 +1,27 @@
+{
+  "working_hours_per_day": 24,
+  "thresholds": {
+    "yellow": 80,
+    "orange": 90,
+    "red": 100
+  },
+  "progress_bar": {
+    "filled": "█",
+    "empty": "▒",
+    "width": 4
+  },
+  "anthropic": {
+    "enabled": false,
+    "refresh_interval_minutes": 3,
+    "credit_limit": 0,
+    "usage_breakdown": true
+  },
+  "cursor": {
+    "enabled": false,
+    "refresh_interval_minutes": 10
+  },
+  "antigravity": {
+    "enabled": false,
+    "refresh_interval_minutes": 2
+  }
+}
