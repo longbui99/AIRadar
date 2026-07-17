@@ -11,8 +11,10 @@
     "width": 4
   },
   "anthropic": {
-    "enabled": false,
-    "refresh_interval_minutes": 3
+    "enabled": true,
+    "refresh_interval_minutes": 3,
+    "credit_limit": 0,
+    "usage_breakdown": true
   },
   "cursor": {
     "enabled": false,
