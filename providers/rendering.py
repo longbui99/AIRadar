@@ -23,6 +23,7 @@ PROVIDER_COLORS: dict[str, str] = {
     "CLD": "#D97706",   # Anthropic — warm amber
     "CUR": "#A855F7",   # Cursor — purple
     "AG": "#10B981",    # Antigravity — teal
+    "CDX": "#10A37F",   # OpenAI — green
 }
 
 # Per-provider 16x16 template images (base64-encoded PNG)
@@ -370,17 +371,23 @@ def render_separator() -> str:
     return "---"
 
 
-def render_footer(script_dir: str, show_login: bool = False) -> list[str]:
+def render_footer(
+    script_dir: str, show_login: bool = False, auth_cli: str = "claude"
+) -> list[str]:
     lines = ["---"]
+    label = "Codex" if auth_cli == "codex" else "Claude"
+    action = "login" if show_login else "logout"
+    icon = "plus" if show_login else "minus"
+    color = COLORS["blue"] if show_login else COLORS["dim"]
     if show_login:
         lines.append(
-            f"Login to Claude | bash=/usr/local/bin/claude param1=login "
-            f"terminal=true refresh=true sfimage=person.crop.circle.badge.plus size=13 color={COLORS['blue']}"
+            f"Login to {label} | bash=/usr/bin/env param1={auth_cli} param2={action} "
+            f"terminal=true refresh=true sfimage=person.crop.circle.badge.{icon} size=13 color={color}"
         )
     else:
         lines.append(
-            f"Logout | bash=/usr/local/bin/claude param1=logout "
-            f"terminal=true refresh=true sfimage=person.crop.circle.badge.minus size=13 color={COLORS['dim']}"
+            f"Logout | bash=/usr/bin/env param1={auth_cli} param2={action} "
+            f"terminal=true refresh=true sfimage=person.crop.circle.badge.{icon} size=13 color={color}"
         )
     lines.extend([
         f"Open Config | bash=open param1={script_dir}/config.json terminal=false "

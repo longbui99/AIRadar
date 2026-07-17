@@ -48,6 +48,8 @@ class ProviderStatus:
     rate_limits: list[tuple[str, float, str]] = field(default_factory=list)
     # Local usage breakdown: {"day": [(label, desc), ...], "week": [...]}
     breakdown: dict[str, list[tuple[str, str]]] = field(default_factory=dict)
+    # Optional CLI used by the footer for providers with their own login flow.
+    auth_cli: str = "claude"
 
 
 def load_providers() -> dict[str, object]:

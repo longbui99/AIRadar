@@ -23,5 +23,9 @@
   "antigravity": {
     "enabled": false,
     "refresh_interval_minutes": 2
+  },
+  "codex": {
+    "enabled": false,
+    "refresh_interval_minutes": 3
   }
 }

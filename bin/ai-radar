@@ -116,7 +116,8 @@ BANNER
     printf '  %s\n' "${DIM}Claude Code — uses your Claude Code OAuth token from macOS Keychain."
     printf '  %s\n' "  Just run 'claude login' if you haven't already."
     printf '  %s\n' "Cursor — reads tokens from Cursor IDE. Only works if Cursor is installed."
-    printf '  %s\n\n' "Google Antigravity — connects to Antigravity IDE. Only works if Antigravity is installed.${NC}"
+    printf '  %s\n' "Google Antigravity — connects to Antigravity IDE. Only works if Antigravity is installed."
+    printf '  %s\n\n' "OpenAI Codex — uses your existing local Codex login; run 'codex login' first.${NC}"
 
     # ── Read defaults from config.json ──
     local global_config="{}"

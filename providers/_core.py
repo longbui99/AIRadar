@@ -113,7 +113,9 @@ def render_single(status: ProviderStatus) -> None:
         print(f"  {status.error} | sfimage=exclamationmark.triangle color=#E5484D size=11")
 
     # Footer
-    for line in render_footer(str(SCRIPT_DIR), show_login=needs_login):
+    for line in render_footer(
+        str(SCRIPT_DIR), show_login=needs_login, auth_cli=status.auth_cli
+    ):
         print(line)
 
 

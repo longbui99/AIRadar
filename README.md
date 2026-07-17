@@ -11,6 +11,7 @@ SwiftBar plugins that show AI service usage and limits in your macOS menu bar. E
 | **Claude** (Anthropic) | 3 min | 5h/7d usage windows, extra credits, spend (API key), plan tier |
 | **Cursor** | 10 min | Premium request usage, billing period reset |
 | **Antigravity** | 2 min | Per-model quota (Gemini Pro, Flash, etc.), plan info |
+| **Codex** (OpenAI) | 3 min | Rate-limit windows, reset times, credits, plan |
 
 ## Install
 
@@ -85,6 +86,10 @@ This opens `config.json` where you toggle providers. Set `"enabled": true` to in
   "antigravity": {
     "enabled": false,
     "refresh_interval_minutes": 2
+  },
+  "codex": {
+    "enabled": false,
+    "refresh_interval_minutes": 3
   }
 }
 ```
@@ -163,6 +168,18 @@ Connects to Antigravity IDE's local language server. **Requires Antigravity to b
 |-----|----------|-------------|
 | `antigravity.enabled` | **Yes** | `true` or `false` |
 | `antigravity.refresh_interval_minutes` | **Yes** | Refresh interval in minutes |
+
+### Codex
+
+Uses your existing Codex login from `~/.codex/auth.json` and reads the usage
+snapshot that Codex writes to local session state. AI Radar never displays,
+copies, or stores the token. Log in once with `codex login`, then click the
+Codex menu-bar item to see limit windows, reset times, credits, and plan details.
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `codex.enabled` | **Yes** | `true` or `false` |
+| `codex.refresh_interval_minutes` | **Yes** | Refresh interval in minutes |
 
 ## Adding a Provider
 
