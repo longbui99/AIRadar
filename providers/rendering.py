@@ -13,7 +13,6 @@ COLORS = {
     "orange": "#FF9500",
     "red": "#E5484D",
     "blue": "#007AFF",
-    "purple": "#AF52DE",
     "cyan": "#32ADE6",
     "gray": "#8E8E93",
     "dim": "#636366",
@@ -366,8 +365,6 @@ def render_breakdown_section(breakdown: dict) -> list[str]:
             # not the provider's quota warning thresholds.
             if "cache" in lower:
                 color = COLORS["green"]
-            elif "model" in lower or (":" in label and "tokens" in lower):
-                color = COLORS["purple"]
             elif "tokens ·" in lower:
                 color = COLORS["cyan"]
             elif pct is not None:
