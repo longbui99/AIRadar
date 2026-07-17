@@ -26,6 +26,7 @@
   },
   "codex": {
     "enabled": false,
-    "refresh_interval_minutes": 3
+    "refresh_interval_minutes": 3,
+    "usage_breakdown": true
   }
 }

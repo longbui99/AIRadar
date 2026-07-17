@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 from dataclasses import dataclass
 
 # ── Color palette (macOS system colors) ──────────────────────────────────────
@@ -12,6 +13,8 @@ COLORS = {
     "orange": "#FF9500",
     "red": "#E5484D",
     "blue": "#007AFF",
+    "purple": "#AF52DE",
+    "cyan": "#32ADE6",
     "gray": "#8E8E93",
     "dim": "#636366",
     "label": "#AEAEB2",
@@ -354,8 +357,38 @@ def render_breakdown_section(breakdown: dict) -> list[str]:
             f"  {title} | size=11 font=SF-Pro-Text-Semibold color={COLORS['label']}"
         )
         for label, desc in insights:
+            lower = label.lower()
+            match = re.search(r"(\d+(?:\.\d+)?)%", f"{label} {desc}")
+            pct = float(match.group(1)) if match else None
+
+            # Semantic colors make healthy cache reuse distinct from expensive
+            # context/subagent shares. These thresholds describe contribution,
+            # not the provider's quota warning thresholds.
+            if "cache" in lower:
+                color = COLORS["green"]
+            elif "model" in lower or (":" in label and "tokens" in lower):
+                color = COLORS["purple"]
+            elif "tokens ·" in lower:
+                color = COLORS["cyan"]
+            elif pct is not None:
+                if pct >= 75:
+                    color = COLORS["red"]
+                elif pct >= 40:
+                    color = COLORS["orange"]
+                elif pct >= 15:
+                    color = COLORS["yellow"]
+                else:
+                    color = COLORS["green"]
+            else:
+                color = COLORS["white"]
+
+            if pct is not None:
+                marker = _smooth_bar(pct, 6)
+            else:
+                marker = "●"
             lines.append(
-                f"  • {label} | size=12 color={COLORS['white']}"
+                f"  {marker}  {label} | font=SF-Mono-Regular size=11 "
+                f"color={color} trim=false"
             )
             if desc:
                 lines.append(

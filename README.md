@@ -174,12 +174,15 @@ Connects to Antigravity IDE's local language server. **Requires Antigravity to b
 Uses your existing Codex login from `~/.codex/auth.json` and reads the usage
 snapshot that Codex writes to local session state. AI Radar never displays,
 copies, or stores the token. Log in once with `codex login`, then click the
-Codex menu-bar item to see limit windows, reset times, credits, and plan details.
+Codex menu-bar item to see limit windows, reset times, credits, plan details,
+and an approximate local Day/Week breakdown of tokens, cache usage, context,
+models, and subagents. Only limit windows returned for your account are shown.
 
 | Key | Required | Description |
 |-----|----------|-------------|
 | `codex.enabled` | **Yes** | `true` or `false` |
 | `codex.refresh_interval_minutes` | **Yes** | Refresh interval in minutes |
+| `codex.usage_breakdown` | No | Show approximate local Day/Week session analytics (default `true`) |
 
 ## Adding a Provider
 

@@ -213,6 +213,14 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
     worst = max((m.forecast_pct for m in metrics if not m.status_only), default=0)
     plan = str(limits.get("plan_type") or "").replace("_", " ").title()
     summary = f"{metrics[0].pct:.0f}%" if metrics else "Active"
+    breakdown: dict[str, list[tuple[str, str]]] = {}
+    if config.get("usage_breakdown", True):
+        try:
+            from providers.codex_usage_breakdown import compute_breakdown
+
+            breakdown = compute_breakdown()
+        except Exception as exc:
+            logger.warning("Codex usage breakdown failed: %s", exc)
     return ProviderStatus(
         name="OpenAI Codex",
         short_name=DISPLAY_NAME,
@@ -220,5 +228,6 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
         color="white" if _color(worst) == "green" else _color(worst),
         metrics=metrics,
         plan_label=plan,
+        breakdown=breakdown,
         auth_cli="codex",
     )
