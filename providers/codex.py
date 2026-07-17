@@ -159,6 +159,16 @@ def _metric(window: dict, position: str) -> MetricData | None:
     )
 
 
+def _plan_label(plan_type: str) -> str:
+    """Map Codex's distinct Pro plan types to their public tier labels."""
+    normalized = str(plan_type or "").lower().strip()
+    if normalized == "prolite":
+        return "Pro 5x"
+    if normalized == "pro":
+        return "Pro 20x"
+    return normalized.replace("_", " ").title()
+
+
 def fetch_status(config: dict, global_config: dict | None = None) -> ProviderStatus:
     """Return usage from the user's existing Codex login and local state."""
     if global_config:
@@ -211,7 +221,7 @@ def fetch_status(config: dict, global_config: dict | None = None) -> ProviderSta
         )
 
     worst = max((m.forecast_pct for m in metrics if not m.status_only), default=0)
-    plan = str(limits.get("plan_type") or "").replace("_", " ").title()
+    plan = _plan_label(limits.get("plan_type") or "")
     summary = f"{metrics[0].pct:.0f}%" if metrics else "Active"
     breakdown: dict[str, list[tuple[str, str]]] = {}
     if config.get("usage_breakdown", True):
